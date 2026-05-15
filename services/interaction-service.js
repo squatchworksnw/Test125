@@ -2,18 +2,28 @@
   window.FieldOps = window.FieldOps || {};
   window.FieldOps.Services = window.FieldOps.Services || {};
 
-  const addNewOptions = [
+  const adminAddNewOptions = [
     { label:"Work Order", view:"workOrders", detail:"Repair, inspection, service call, or follow-up tied to an asset, system, space, building, or vehicle." },
-    { label:"Submitted Request", view:"importReview", detail:"A simple request that waits in Import Review first." },
-    { label:"Document / Receipt", view:"documents", detail:"PDF, photo, spreadsheet, invoice, or fuel receipt." },
+    { label:"Document / Receipt", view:"documents", detail:"Upload a photo, receipt, PDF, spreadsheet, invoice, or supporting file." },
     { label:"Vehicle", view:"vehicles", detail:"Mobile asset record with VIN, plate, mileage, service dates, and documents." },
-    { label:"Fuel Receipt", view:"fuelReceipts", detail:"Gas purchase tied to a vehicle and budget." },
     { label:"Project", view:"projects", detail:"Repair, remodel, approval, or contractor scope." },
-    { label:"Vendor", view:"vendors", detail:"Subcontractor, service vendor, bid contact, or supplier." },
-    { label:"Materials / Takeoff", view:"materials", detail:"Contractor material list staged for review." },
-    { label:"Building", view:"buildings", detail:"Facility, office, kitchen, warehouse, or site that anchors spaces and assets." },
-    { label:"Space / Asset", view:"spaces", detail:"Room, fixture, equipment, system, or field location." }
+    { label:"Vendor", view:"vendors", detail:"Subcontractor, service vendor, bid contact, or supplier." }
   ];
+  const ownerAddNewOptions = [
+    ...adminAddNewOptions,
+    { label:"Building / Space / Asset", view:"buildings", detail:"Facility anchors, rooms, equipment, systems, or field locations." }
+  ];
+  const submitterAddNewOptions = [
+    { label:"Submit Request", view:"importReview", detail:"Send location, urgency, notes, and an optional file." },
+    { label:"Upload File", view:"documents", detail:"Photo, PDF, spreadsheet, estimate, or supporting document." },
+    { label:"Upload Receipt", view:"documents", detail:"Gas, supply, invoice, or purchase receipt." }
+  ];
+
+  function currentAddNewOptions(){
+    if(typeof window.canSubmitOnly === "function" && window.canSubmitOnly()) return submitterAddNewOptions;
+    if(typeof window.isOwner === "function" && window.isOwner()) return ownerAddNewOptions;
+    return adminAddNewOptions;
+  }
 
   function esc(value){
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -44,7 +54,7 @@
   function renderAddNewOptions(){
     const grid = document.getElementById("addNewGrid");
     if(!grid) return;
-    grid.innerHTML = addNewOptions.map(option => `
+    grid.innerHTML = currentAddNewOptions().map(option => `
       <button class="add-new-option" type="button" data-target-view="${esc(option.view)}">
         <strong>${esc(option.label)}</strong>
         <span>${esc(option.detail)}</span>
@@ -132,7 +142,7 @@
       const file = event.dataTransfer?.files?.[0];
       if(file){
         setDroppedReviewFile(file);
-        showToast("File staged for Import Review", "pending");
+        showToast("File staged for Needs Review", "pending");
       }
     });
     zone.addEventListener("click", () => input?.click());
@@ -150,7 +160,8 @@
   }
 
   window.FieldOps.Services.interactions = {
-    addNewOptions,
+    addNewOptions: adminAddNewOptions,
+    currentAddNewOptions,
     droppedReviewFile: null,
     showToast,
     openAddNew,
