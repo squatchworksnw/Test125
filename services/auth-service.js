@@ -55,7 +55,7 @@
     const state = ctx.getState();
     if(isAuthenticated(state) && state.currentWorkspace) return true;
     ctx.setStatus(isAuthenticated(state) ? "Loading workspace" : "Sign in to use Supabase");
-    if(showAlert) alert(isAuthenticated(state) ? "Workspace is still loading." : "Sign in first so Supabase RLS can allow access.");
+    if(showAlert) alert(isAuthenticated(state) ? "Workspace is still loading." : "Sign in first so database permission rules can allow access.");
     return false;
   }
 
@@ -87,7 +87,7 @@
   function requireOperationsPermission(actionLabel, ctx){
     if(requireAuth(true, ctx) && canManageOperations(ctx.getState())) return true;
     ctx.setStatus("Owner or Admin required");
-    alert(`Owner or Admin access is required to ${actionLabel}. Submitters can send requests through Import Review.`);
+    alert(`Owner or Admin access is required to ${actionLabel}. Submitters can send requests through Needs Review.`);
     return false;
   }
 
