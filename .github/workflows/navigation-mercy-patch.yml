@@ -1,0 +1,195 @@
+name: Apply Navigation Mercy Patch
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch app shell files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          index_path = root / 'index.html'
+          app_path = root / 'app.js'
+
+          html = index_path.read_text(encoding='utf-8-sig')
+          app = app_path.read_text(encoding='utf-8')
+
+          if '<a class="skip-link" href="#mainContent">Skip to workspace</a>' not in html:
+              html = html.replace('<body data-auth="signed-out" data-role="signed-out">', '<body data-auth="signed-out" data-role="signed-out">\n<a class="skip-link" href="#mainContent">Skip to workspace</a>', 1)
+
+          html = html.replace('data-open-add-new>+ Add New</button>', 'data-open-add-new>+ Add</button>')
+          html = html.replace('<div class="sync-pill" data-companion="bee">', '<div class="sync-pill" data-companion="bee" aria-live="polite" aria-atomic="true">')
+
+          new_nav = '''  <nav class="top-nav" aria-label="Primary tasks">
+    <button class="tab" data-view="fieldPortal" data-nav-group="portal">My Home</button>
+    <button class="tab active" data-view="dashboard" data-nav-group="command">Today</button>
+    <button class="tab" data-view="workOrders" data-nav-group="operations">Work</button>
+    <button class="tab" data-view="documents" data-nav-group="support">Upload</button>
+    <button class="tab" data-view="importReview" data-nav-group="command">Needs Review</button>
+    <button class="tab" data-view="settings" data-nav-group="oversight">More</button>
+  </nav>'''
+          html = re.sub(r'  <nav class="top-nav"[\s\S]*?  </nav>', new_nav, html, count=1)
+          html = html.replace('<main>', '<main id="mainContent" tabindex="-1">')
+          html = html.replace('Requests, files, estimates, and material lists go through review before they become live operational records.', 'Requests, files, estimates, and material lists go through Needs Review before they become active work.')
+          html = html.replace('<strong>Coming from RLS</strong>', '<strong>Coming from workspace permissions</strong>')
+          html = html.replace('<h2>Access limited</h2>', '<h2>That area is not available for this login</h2>')
+          html = html.replace('Go to my home</button>', 'Return to my home</button>')
+          html = html.replace('data-open-add-new>Quick Add</button>', 'data-open-add-new>Add</button>')
+          html = html.replace('        <button type="button" class="ghost" onclick="loadDemoPilotData()">Load Demo Data</button>\n        <button type="button" class="ghost" onclick="clearDemoPilotData()">Clear Demo</button>\n', '')
+          html = html.replace('Review Queue intake desk', 'Needs Review intake desk')
+          html = html.replace('<span>Import Review</span>', '<span>Needs Review</span>')
+          html = html.replace('<h2>Import Review</h2>', '<h2>Needs Review</h2>')
+          html = html.replace('Extracted PDF, Excel, CSV, and incoming field notes wait here before becoming live records.', 'Requests, files, receipts, estimates, material lists, and spreadsheet rows wait here before becoming active work.')
+          html = html.replace('Files are staged with this request until you submit it to Import Review.', 'Files stay with this request until the operations team reviews it.')
+          html = html.replace('Add to Import Review</button>', 'Send for Review</button>')
+          html = html.replace('<h3>Waiting for Review</h3>', '<h3>Needs Review</h3>')
+          html = html.replace('Back to Review</button>', 'Back to Needs Review</button>')
+          html = html.replace('Reject / Archive</button>', 'Move out of active work</button>')
+          html = html.replace('<h3>Materials Review</h3>', '<h3>Materials Needing Review</h3>')
+          html = html.replace('id="workOrderDetailArchiveBtn">Archive</button>', 'id="workOrderDetailArchiveBtn">Move out of active work</button>')
+          html = html.replace('<h3>Archived Work Orders</h3><p class="meta">Recoverable records kept out of the active field list.</p>', '<h3>Inactive Work Orders</h3><p class="meta">Recoverable records kept out of the active field list.</p>')
+          html = html.replace('<h2>Documents</h2>', '<h2>Upload Something</h2>')
+          html = html.replace('PDF, Excel, CSV, photos, estimates, and reports linked back to buildings, spaces, assets/systems, vehicles, and work orders.', 'Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file. The app routes it safely behind the scenes.')
+          html = html.replace('Type<select id="fileType"><option>Contract</option><option>Bid</option><option>Estimate</option><option>Invoice</option><option>Fuel Receipt</option><option>Inspection</option><option>Photo</option><option>Report</option><option>Checklist</option><option>Other</option></select>', 'What kind of file is this?<select id="fileType"><option>Photo</option><option>Fuel Receipt</option><option>Estimate</option><option>Invoice</option><option>Spreadsheet</option><option>Contract</option><option>Bid</option><option>Inspection</option><option>Report</option><option>Checklist</option><option>Other / Not sure</option></select>')
+          html = html.replace('<h2>Import / Extraction Center</h2>', '<h2>Admin Import Tools</h2>')
+          html = html.replace('Pull information from Excel, CSV, and PDF files into the Review Queue before it becomes live work.', 'Pull information from Excel, CSV, and PDF files into Needs Review before it becomes active work.')
+          html = html.replace('Smart import is on. Recognized records are staged in Review Queue first so they can be checked, approved, or archived.', 'Smart import is on. Recognized records are staged in Needs Review first so they can be checked, approved, or moved out of active work.')
+          html = html.replace('Fix or match spreadsheet columns before rows are staged in Import Review.', 'Fix or match spreadsheet columns before rows are staged in Needs Review.')
+          html = html.replace('Retry Pending Writes</button>', 'Retry items waiting to sync</button>')
+          html = html.replace('Pending retry queue:', 'Waiting to sync:')
+          html = html.replace('Direct table writes are on: creates, edits, archives, documents, and import reviews write to normalized <strong>field_ops_*</strong> tables.', 'Secure workspace records are on: creates, edits, files, and items needing review write to Supabase workspace tables.')
+          html = html.replace('<span>Pending Writes</span>', '<span>Waiting to Sync</span>')
+          html = html.replace('Choose the closest option. If you are not sure, send it to Submitted Request and it will wait in Import Review.', 'Choose the closest option. If you are not sure, send it to Needs Review and the operations team can route it.')
+          html = html.replace('<div class="modal-backdrop" id="editModal">', '<div class="modal-backdrop" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">')
+          html = html.replace('Make changes, then save. Records write directly to Supabase.', 'Make changes, then save. Changes update the secure workspace records.')
+          if 'onclick="loadDemoPilotData()"' not in html.split('<section id="settings"', 1)[-1]:
+              html = html.replace('<button class="ghost" onclick="downloadBackup()">Download Backup</button>', '<button class="ghost" onclick="downloadBackup()">Download Backup</button>\n        <button class="ghost" onclick="loadDemoPilotData()">Load Demo Data</button>\n        <button class="ghost" onclick="clearDemoPilotData()">Clear Demo</button>', 1)
+
+          app = app.replace('Supabase RLS remains the source of truth; this screen is hidden to prevent mistakes.', 'Database permission rules still protect the workspace; this screen is hidden to prevent mistakes.')
+          app = app.replace('if(importTitle) importTitle.textContent = submitterOnly ? "Submit Request" : "Import Review";', 'if(importTitle) importTitle.textContent = submitterOnly ? "Submit Request" : "Needs Review";')
+          app = app.replace(': "Extracted PDF, Excel, CSV, and incoming field notes wait here before becoming live records.";', ': "Requests, files, receipts, estimates, material lists, and spreadsheet rows wait here before becoming active work.";')
+          app = app.replace('if(submitButton) submitButton.textContent = submitterOnly ? "Submit Request" : "Add to Import Review";', 'if(submitButton) submitButton.textContent = submitterOnly ? "Submit Request" : "Send for Review";')
+          app = app.replace('Approve when it is ready to become operational work.', 'Approve when it is ready to become active work.')
+          app = app.replace('if(documentsTitle) documentsTitle.textContent = submitterOnly ? "Uploads" : "Documents";', 'if(documentsTitle) documentsTitle.textContent = "Upload Something";')
+          app = app.replace('if(documentsMeta) documentsMeta.textContent = submitterOnly ? "Upload photos, PDFs, spreadsheets, and receipts for the operations team." : "PDF, Excel, CSV, photos, estimates, and reports stored in Supabase Storage and linked to records.";', 'if(documentsMeta) documentsMeta.textContent = submitterOnly ? "Upload a photo, receipt, PDF, spreadsheet, or file for the operations team." : "Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file and link it to the right work.";')
+          app = app.replace('tab.textContent = canSubmitOnly() ? "Submit Request" : "Review Queue";', 'tab.textContent = canSubmitOnly() ? "Submit" : "Needs Review";')
+          app = app.replace('tab.textContent = canSubmitOnly() ? "Upload Document" : "Documents";', 'tab.textContent = "Upload";')
+          app = app.replace('tab.textContent = canSubmitOnly() ? "My Home" : "Field Portal";', 'tab.textContent = "My Home";')
+          app = app.replace('if(viewId === "materials")', 'if(false && viewId === "materials")')
+          app = app.replace('if(viewId === "assets")', 'if(false && viewId === "assets")')
+          app = app.replace('if(viewId === "vehicles")', 'if(false && viewId === "vehicles")')
+          app = app.replace('const visible = isAuthenticated() && currentWorkspace && canManageOperations();\n    primaryAdd.classList.toggle("hidden", !visible);\n    primaryAdd.hidden = !visible;', 'const visible = isAuthenticated() && currentWorkspace;\n    primaryAdd.classList.toggle("hidden", !visible);\n    primaryAdd.hidden = !visible;\n    primaryAdd.textContent = canSubmitOnly() ? "+ Send" : "+ Add";')
+          app = app.replace('if(!requireArchivePermission("archive operational records")) throw new Error("Role cannot archive this record");', 'if(!requireArchivePermission("move records out of active work")) throw new Error("Role cannot move this record out of active work");')
+          app = app.replace('setStatus("Archiving...");', 'setStatus("Moving out of active work...");')
+          app = app.replace('setStatus("Archived");\n    await refreshAfterWrite("Archived");', 'setStatus("Moved out of active work");\n    await refreshAfterWrite("Moved out of active work");')
+          app = app.replace('>Archive</button>', '>Move out of active work</button>')
+          app = app.replace('archive operational records', 'move records out of active work')
+          app = app.replace('Archive this item? It will be hidden from active lists but kept for history.', 'Move this item out of active work? It will be hidden from active lists but kept for history.')
+          app = app.replace('stage rows to Import Review.', 'stage rows to Needs Review.')
+          app = app.replace('PDF staged in Import Review.', 'PDF staged in Needs Review.')
+          app = app.replace('staged in Import Review.', 'staged in Needs Review.')
+
+          old_set_active = '''function setActiveView(id){
+  activeViewId = id;
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+  updateBackButton();
+  window.scrollTo({top:0,behavior:"smooth"});
+}'''
+          new_set_active = '''function setActiveView(id){
+  activeViewId = id;
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));
+  document.querySelectorAll(".tab").forEach(b=>{
+    const active = b.dataset.view===id;
+    b.classList.toggle("active", active);
+    b.setAttribute?.("aria-current", active ? "page" : "false");
+    b.setAttribute?.("aria-selected", active ? "true" : "false");
+  });
+  updateBackButton();
+  document.getElementById("mainContent")?.focus?.({ preventScroll:true });
+  window.scrollTo({top:0,behavior:"smooth"});
+}'''
+          app = app.replace(old_set_active, new_set_active)
+
+          old_unauth = '''if(!canAccessView(id)){
+    if(id !== activeViewId && !options.skipHistory){
+      AppState.pushViewHistory(runtimeState, activeViewId);
+    }
+    const home = defaultViewForRole();
+    if(home && home !== id && document.getElementById(home)){
+      setStatus("Redirected to your workspace");
+      showView(home, { skipHistory:true });
+    } else {
+      showAccessDenied(id);
+    }
+    return;
+  }'''
+          new_unauth = '''if(!canAccessView(id)){
+    if(!isAuthenticated()){
+      setActiveView("login");
+      return;
+    }
+    if(id !== activeViewId && !options.skipHistory){
+      AppState.pushViewHistory(runtimeState, activeViewId);
+    }
+    showAccessDenied(id);
+    return;
+  }'''
+          app = app.replace(old_unauth, new_unauth)
+
+          if 'function setupFormDisclosure(){' not in app:
+              app = app.replace('function goBackView(){', '''function setupFormDisclosure(){
+  const collapsedForms = ["projectForm","vendorForm","bidForm","materialForm","taskForm","buildingForm","spaceForm","assetForm","vehicleForm","fuelReceiptForm","budgetForm"];
+  collapsedForms.forEach(formId => {
+    const form = document.getElementById(formId);
+    const panel = form?.closest?.(".panel");
+    const title = panel?.querySelector?.(".panel-title");
+    if(!form || !panel || !title || typeof title.appendChild !== "function" || panel.dataset.formDisclosureReady) return;
+    panel.dataset.formCollapsed = "true";
+    panel.dataset.formDisclosureReady = "true";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ghost form-disclosure-btn";
+    button.textContent = formId === "taskForm" ? "Create Work Order" : "Add / Edit";
+    button.setAttribute("aria-expanded", "false");
+    button.addEventListener("click", () => {
+      const collapsed = panel.dataset.formCollapsed !== "false";
+      panel.dataset.formCollapsed = collapsed ? "false" : "true";
+      button.textContent = collapsed ? "Hide Form" : (formId === "taskForm" ? "Create Work Order" : "Add / Edit");
+      button.setAttribute("aria-expanded", collapsed ? "true" : "false");
+      if(collapsed) form.querySelector?.("input,select,textarea,button")?.focus?.();
+    });
+    title.appendChild(button);
+  });
+}
+
+function goBackView(){''')
+          app = app.replace('InteractionService?.init?.();\ninitializeAuth();', 'InteractionService?.init?.();\nsetupFormDisclosure();\ninitializeAuth();')
+
+          index_path.write_text('\ufeff' + html.lstrip('\ufeff'), encoding='utf-8')
+          app_path.write_text(app, encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html app.js
+          if git diff --cached --quiet; then
+            echo "No shell patch changes needed."
+          else
+            git commit -m "Apply navigation mercy shell patch"
+            git push
+          fi
