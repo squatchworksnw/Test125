@@ -73,7 +73,7 @@
     const pendingWrites = ctx.getPendingWrites();
     if(!pendingWrites.length){
       renderPendingQueueState(ctx);
-      if(showAlert) alert("No pending writes to retry.");
+      if(showAlert) setStatus("No items waiting to sync");
       return;
     }
     if(!ctx.requireAuth(showAlert)) return;
