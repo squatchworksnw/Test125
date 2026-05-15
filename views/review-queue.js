@@ -13,9 +13,9 @@ function renderReviewQueue(){
   const reviews = activeItems("submissions");
   document.getElementById("submissionList").innerHTML = reviews.length ? reviews.map(item => {
     const doc = item.documentId ? app.files.find(file => file.id === item.documentId) : null;
-    const actions = item.status === "Needs Review" && canManageOperations() ? `<div class="actions no-print"><button type="button" onclick="openReviewDetail('${item.id}')">Open Review</button><button class="ghost" type="button" onclick="archiveSubmissionById('${item.id}')">Reject / Archive</button></div>` : "";
-    return card(item.description || "Review item", [item.importedRecord?.file_name, doc ? `Attached file: ${doc.fileName}` : item.documentId ? "Attached file" : "", item.convertedRecordId ? `Converted: ${item.convertedRecordId}` : ""], [item.category, item.status, item.source], tone(item.status)) + actions;
-  }).join("") : empty(canSubmitOnly() ? "No submitted requests yet." : "No import reviews waiting.");
+    const actions = item.status === "Needs Review" && canManageOperations() ? `<div class="actions no-print"><button type="button" onclick="openReviewDetail('${item.id}')">Open Review</button><button class="ghost" type="button" onclick="archiveSubmissionById('${item.id}')">Move out of active work</button></div>` : "";
+    return card(item.description || "Review item", [item.importedRecord?.file_name, doc ? `Attached file: ${doc.fileName}` : item.documentId ? "Attached file" : "", item.convertedRecordId ? `Approved work order: ${item.convertedRecordId}` : ""], [item.category, item.status, item.source], tone(item.status)) + actions;
+  }).join("") : empty(canSubmitOnly() ? "No submitted requests yet." : "Nothing needs review right now.");
 }
 
 
@@ -116,7 +116,7 @@ function renderImportReviewDetail(){
   const review = selectedReview();
   if(!review){
     title.textContent = "Review Submission";
-    meta.textContent = "Choose a submitted item from Import Review.";
+    meta.textContent = "Choose a submitted item from Needs Review.";
     form.innerHTML = empty("No submitted item selected.");
     return;
   }
@@ -138,7 +138,7 @@ function renderImportReviewDetail(){
       ${fieldHtml("asset_id","Asset","assetSelect",data.asset_id || "")}
       ${fieldHtml("vehicle_id","Vehicle","vehicleSelect",data.vehicle_id || "")}
       ${fieldHtml("vendor_id","Vendor","vendorSelect",data.vendor_id || "")}
-      ${doc ? `<div class="full">${documentPreviewCard({ ...doc, contextLabel:"Attached to this review" })}</div>` : review.documentId ? `<p class="meta full">Attached file will remain linked through conversion.</p>` : ""}
+      ${doc ? `<div class="full">${documentPreviewCard({ ...doc, contextLabel:"Attached to this review" })}</div>` : review.documentId ? `<p class="meta full">Attached file will remain linked when this is approved.</p>` : ""}
       <label class="full">Location / description<textarea name="description">${esc(data.description || data.location || "")}</textarea></label>
       <label class="full">Notes / history<textarea name="notes">${esc(data.notes || data.extracted_text || review.description || "")}</textarea></label>
     </div>
@@ -147,7 +147,7 @@ function renderImportReviewDetail(){
   const rejectBtn = document.getElementById("reviewRejectBtn");
   const saveState = document.getElementById("reviewDetailSaveState");
   if(saveState){
-    saveState.textContent = converted ? `Already converted to work order ${review.convertedRecordId || ""}` : "Ready";
+    saveState.textContent = converted ? `Already approved as work order ${review.convertedRecordId || ""}` : "Ready";
     saveState.dataset.state = converted ? "saved" : "";
   }
   if(approveBtn){
@@ -173,19 +173,19 @@ async function approveReviewDetail(){
   if(!review || !requireOperationsPermission("approve submitted requests")) return;
   try{
     if(review.convertedRecordId || String(review.status || "").toLowerCase() === "approved"){
-      setInlineState("reviewDetailSaveState", "This review item is already converted", "saved");
+      setInlineState("reviewDetailSaveState", "This item was already approved into a work order", "saved");
       selectedWorkOrderId = review.convertedRecordId || "";
       if(selectedWorkOrderId) showView("workOrderDetail");
       return;
     }
-    setInlineState("reviewDetailSaveState", "Approving into Work Order...", "pending");
+    setInlineState("reviewDetailSaveState", "Approving into work order...", "pending");
     const payload = reviewWorkOrderPayload();
     const created = await ImportReviewService.approveReview({ reviewId:review.id, review, type:"work_order", data:payload, documentId:review.documentId, reviewerId:currentSession.user.id }, importReviewContext());
     selectedWorkOrderId = created.id;
-    setInlineState("reviewDetailSaveState", created.alreadyConverted ? "Already converted" : "Approved and converted", "saved");
-    const refreshed = await refreshAfterWrite?.("Approved and converted");
+    setInlineState("reviewDetailSaveState", created.alreadyConverted ? "Already approved" : "Approved into work order", "saved");
+    const refreshed = await refreshAfterWrite?.("Approved into work order");
     if(refreshed !== false) showView("workOrderDetail");
-    else setInlineState("reviewDetailSaveState", "Approved and converted, but the workspace refresh failed. Refresh from Supabase before opening the work order.", "saved");
+    else setInlineState("reviewDetailSaveState", "Approved into a work order, but the workspace refresh failed. Refresh before opening the work order.", "saved");
   }catch(err){
     setInlineState("reviewDetailSaveState", `Approval failed: ${err.message}`, "failed");
     handleWriteError(err);
