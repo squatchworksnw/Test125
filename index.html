@@ -10,6 +10,7 @@
 </head>
 
 <body data-auth="signed-out" data-role="signed-out">
+<a class="skip-link" href="#mainContent">Skip to workspace</a>
 <div id="pilotIndicator" class="pilot-indicator hidden">Pilot environment — verify before operational use</div>
 <section id="login" class="view login-screen active" aria-label="Sign in">
   <div class="login-card editorial-card">
@@ -53,8 +54,8 @@
       <h1>Field Operations Command Center</h1>
       <p>A calm field desk for buildings, spaces, assets, systems, vehicles, vendors, documents, and daily work.</p>
     </div>
-    <button id="openAddNewBtn" class="primary-add-btn" type="button" data-open-add-new>+ Add New</button>
-    <div class="sync-pill" data-companion="bee">
+    <button id="openAddNewBtn" class="primary-add-btn" type="button" data-open-add-new>+ Add</button>
+    <div class="sync-pill" data-companion="bee" aria-live="polite" aria-atomic="true">
       <span class="sync-dot" id="syncDot"></span>
       <strong id="syncStatusText">Sign in to load workspace</strong>
     </div>
@@ -68,40 +69,23 @@
     </div>
   </div>
 
-  <nav class="top-nav" aria-label="Navigation">
-    <span class="nav-section-label" data-nav-section="portal">Portal</span>
-    <button class="tab" data-view="fieldPortal" data-nav-group="portal">Field Portal</button>
-    <span class="nav-section-label" data-nav-section="command">Command</span>
+  <nav class="top-nav" aria-label="Primary tasks">
+    <button class="tab" data-view="fieldPortal" data-nav-group="portal">My Home</button>
     <button class="tab active" data-view="dashboard" data-nav-group="command">Today</button>
-    <button class="tab" data-view="importReview" data-nav-group="command">Review Queue</button>
-    <button class="nav-action" type="button" data-open-add-new data-nav-group="command">Add New</button>
-    <span class="nav-section-label" data-nav-section="operations">Operations</span>
-    <button class="tab" data-view="workOrders" data-nav-group="operations">Work Orders</button>
-    <button class="tab" data-view="projects" data-nav-group="operations">Projects</button>
-    <button class="tab" data-view="vehicles" data-nav-group="operations">Fleet / Mobile Assets</button>
-    <span class="nav-section-label" data-nav-section="places">Places + Assets</span>
-    <button class="tab" data-view="buildings" data-nav-group="places">Buildings</button>
-    <button class="tab" data-view="spaces" data-nav-group="places">Spaces / Rooms</button>
-    <button class="tab" data-view="assets" data-nav-group="places">Assets / Systems</button>
-    <span class="nav-section-label" data-nav-section="support">Support</span>
-    <button class="tab" data-view="vendors" data-nav-group="support">Vendors</button>
-    <button class="tab" data-view="materials" data-nav-group="support">Materials / Inventory</button>
-    <button class="tab" data-view="documents" data-nav-group="support">Documents</button>
-    <span class="nav-section-label" data-nav-section="oversight">Oversight</span>
-    <button class="tab" data-view="fuelReceipts" data-nav-group="oversight">Fuel Receipts</button>
-    <button class="tab" data-view="budget" data-nav-group="oversight">Budget</button>
-    <button class="tab" data-view="reports" data-nav-group="oversight">Reports</button>
-    <button class="tab" data-view="settings" data-nav-group="oversight">Settings</button>
+    <button class="tab" data-view="workOrders" data-nav-group="operations">Work</button>
+    <button class="tab" data-view="documents" data-nav-group="support">Upload</button>
+    <button class="tab" data-view="importReview" data-nav-group="command">Needs Review</button>
+    <button class="tab" data-view="settings" data-nav-group="oversight">More</button>
   </nav>
 </header>
 
-<main>
+<main id="mainContent" tabindex="-1">
   <section id="fieldPortal" class="view">
     <section class="home-hero panel editorial-card">
       <div>
         <p class="eyebrow">Field portal</p>
         <h2>Send the operations team what they need.</h2>
-        <p class="meta">Requests, files, estimates, and material lists go through review before they become live operational records.</p>
+        <p class="meta">Requests, files, estimates, and material lists go through Needs Review before they become active work.</p>
       </div>
       <div class="quick-actions no-print" aria-label="Field portal actions">
         <button type="button" onclick="showView('importReview')">Submit New Request</button>
@@ -134,7 +118,7 @@
       </button>
       <button class="workspace-card calendar" type="button">
         <span>Assigned Work</span>
-        <strong>Coming from RLS</strong>
+        <strong>Coming from workspace permissions</strong>
         <em>Assigned work can appear here when the workspace grants access.</em>
       </button>
     </section>
@@ -144,10 +128,10 @@
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h2>Access limited</h2>
+          <h2>That area is not available for this login</h2>
           <p id="accessDeniedMessage" class="meta">Your role does not include this area.</p>
         </div>
-        <button class="ghost" type="button" onclick="showView(defaultViewForRole())">Go to my home</button>
+        <button class="ghost" type="button" onclick="showView(defaultViewForRole())">Return to my home</button>
       </div>
     </section>
   </section>
@@ -162,11 +146,9 @@
       <div class="illustration-anchor" aria-hidden="true"></div>
       <div class="quick-actions no-print" aria-label="Daily actions">
         <button type="button" onclick="showView('workOrders')">New Work Order</button>
-        <button type="button" class="ghost" data-open-add-new>Quick Add</button>
+        <button type="button" class="ghost" data-open-add-new>Add</button>
         <button type="button" class="ghost" onclick="showView('documents')">Upload Document</button>
         <button type="button" class="ghost" onclick="showView('vehicles')">Fleet Status</button>
-        <button type="button" class="ghost" onclick="loadDemoPilotData()">Load Demo Data</button>
-        <button type="button" class="ghost" onclick="clearDemoPilotData()">Clear Demo</button>
         <button type="button" class="ghost" onclick="buildReport(true)">Generate Report</button>
       </div>
     </section>
@@ -185,7 +167,7 @@
       <button class="priority-tile review" type="button" onclick="showView('importReview')">
         <span>Waiting review</span>
         <strong id="todayReviewCount">0</strong>
-        <em>Review Queue intake desk</em>
+        <em>Needs Review intake desk</em>
       </button>
       <button class="priority-tile due" type="button" onclick="showView('workOrders')">
         <span>Due today</span>
@@ -211,7 +193,7 @@
 
     <section class="workspace-grid" aria-label="Primary workspaces">
       <button class="workspace-card review" type="button" onclick="showView('importReview')">
-        <span>Import Review</span>
+        <span>Needs Review</span>
         <strong id="reviewQueueCount">0 waiting</strong>
         <em>Extracted files and incoming items wait here before becoming records.</em>
       </button>
@@ -294,8 +276,8 @@
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h2>Import Review</h2>
-          <p class="meta">Extracted PDF, Excel, CSV, and incoming field notes wait here before becoming live records.</p>
+          <h2>Needs Review</h2>
+          <p class="meta">Requests, files, receipts, estimates, material lists, and spreadsheet rows wait here before becoming active work.</p>
         </div>
         <button class="ghost" type="button" data-admin-only onclick="showView('importCenter')">Open Import Tools</button>
       </div>
@@ -334,19 +316,19 @@
         <label class="full">What happened?<textarea id="submissionDescription" required placeholder="Short notes, context, safety concerns, or next step needed..."></textarea></label>
         <div id="reviewDropZone" class="drop-zone full" tabindex="0" role="button" aria-label="Attach a file to this request">
           <p><strong>Drop photos, PDFs, receipts, or estimates here</strong></p>
-          <p class="meta">Files are staged with this request until you submit it to Import Review.</p>
+          <p class="meta">Files stay with this request until the operations team reviews it.</p>
         </div>
         <div id="reviewUploadPreview" class="upload-preview-list full"></div>
         <label class="full">Attach photo/document/receipt<input id="submissionUpload" type="file" accept=".pdf,.csv,.xlsx,.xls,image/*" /></label>
         <p id="submissionSaveState" class="meta full" data-state="">Ready</p>
-        <div class="actions full"><button type="submit">Add to Import Review</button></div>
+        <div class="actions full"><button type="submit">Send for Review</button></div>
       </form>
     </section>
 
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h3>Waiting for Review</h3>
+          <h3>Needs Review</h3>
           <p class="meta">Approve when it is ready to become operational work.</p>
         </div>
       </div>
@@ -362,9 +344,9 @@
           <p id="reviewDetailMeta" class="meta">Fix the fields before approving this into operational records.</p>
         </div>
         <div class="actions no-print">
-          <button class="ghost" type="button" onclick="showView('importReview')">Back to Review</button>
+          <button class="ghost" type="button" onclick="showView('importReview')">Back to Needs Review</button>
           <button type="button" id="reviewApproveBtn">Approve Work Order</button>
-          <button class="danger" type="button" id="reviewRejectBtn">Reject / Archive</button>
+          <button class="danger" type="button" id="reviewRejectBtn">Move out of active work</button>
         </div>
       </div>
       <p id="reviewDetailSaveState" class="meta" data-state="">Ready</p>
@@ -458,7 +440,7 @@
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h3>Materials Review</h3>
+          <h3>Materials Needing Review</h3>
           <p class="meta">Lists wait here until Owner/Admin approves them into budget tracking.</p>
         </div>
       </div>
@@ -490,7 +472,7 @@
     </section>
     <section class="panel"><div class="panel-title"><h3>Work Order List</h3></div><div id="taskList" class="card-list"></div></section>
     <section class="panel" data-admin-only>
-      <div class="panel-title"><div><h3>Archived Work Orders</h3><p class="meta">Recoverable records kept out of the active field list.</p></div></div>
+      <div class="panel-title"><div><h3>Inactive Work Orders</h3><p class="meta">Recoverable records kept out of the active field list.</p></div></div>
       <div id="archivedTaskList" class="card-list"></div>
     </section>
   </section>
@@ -506,7 +488,7 @@
           <button class="ghost" type="button" onclick="showView('workOrders')">Back to Work Orders</button>
           <button type="button" id="workOrderDetailEditBtn">Edit</button>
           <button class="ghost" type="button" id="workOrderDetailCompleteBtn">Mark Complete</button>
-          <button class="danger" type="button" id="workOrderDetailArchiveBtn">Archive</button>
+          <button class="danger" type="button" id="workOrderDetailArchiveBtn">Move out of active work</button>
         </div>
       </div>
       <div id="workOrderDetailBody"></div>
@@ -641,6 +623,8 @@
         <button onclick="buildReport(true)">Preview Report</button>
         <button onclick="printBoardReport()">Print / Save as PDF</button>
         <button class="ghost" onclick="downloadBackup()">Download Backup</button>
+        <button class="ghost" onclick="loadDemoPilotData()">Load Demo Data</button>
+        <button class="ghost" onclick="clearDemoPilotData()">Clear Demo</button>
       </div>
     </section>
     <section class="panel"><div class="panel-title"><h3>Report Preview</h3></div><div id="reportPreview"></div></section>
@@ -650,14 +634,14 @@
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h2>Documents</h2>
-          <p class="meta">PDF, Excel, CSV, photos, estimates, and reports linked back to buildings, spaces, assets/systems, vehicles, and work orders.</p>
+          <h2>Upload Something</h2>
+          <p class="meta">Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file. The app routes it safely behind the scenes.</p>
         </div>
         <button class="ghost" type="button" data-admin-only onclick="showView('importCenter')">Extract From File</button>
       </div>
       <form id="fileForm" class="mobile-upload-form">
         <label>File name or link<input id="fileName" required placeholder="estimate.pdf, inspection report, photo link..." /></label>
-        <label>Type<select id="fileType"><option>Contract</option><option>Bid</option><option>Estimate</option><option>Invoice</option><option>Fuel Receipt</option><option>Inspection</option><option>Photo</option><option>Report</option><option>Checklist</option><option>Other</option></select></label>
+        <label>What kind of file is this?<select id="fileType"><option>Photo</option><option>Fuel Receipt</option><option>Estimate</option><option>Invoice</option><option>Spreadsheet</option><option>Contract</option><option>Bid</option><option>Inspection</option><option>Report</option><option>Checklist</option><option>Other / Not sure</option></select></label>
         <label>Upload file<input id="documentUpload" type="file" accept=".pdf,.csv,.xlsx,.xls,image/*" /></label>
         <label>Related building<select id="fileBuilding"></select></label>
         <label>Related space / room<select id="fileSpace"></select></label>
@@ -699,8 +683,8 @@
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h2>Import / Extraction Center</h2>
-          <p class="meta">Pull information from Excel, CSV, and PDF files into the Review Queue before it becomes live work.</p>
+          <h2>Admin Import Tools</h2>
+          <p class="meta">Pull information from Excel, CSV, and PDF files into Needs Review before it becomes active work.</p>
         </div>
       </div>
 
@@ -734,7 +718,7 @@
             </label>
           </div>
 
-          <p class="meta small">Smart import is on. Recognized records are staged in Review Queue first so they can be checked, approved, or archived.</p>
+          <p class="meta small">Smart import is on. Recognized records are staged in Needs Review first so they can be checked, approved, or moved out of active work.</p>
         </section>
 
         <section class="panel" style="box-shadow:none;">
@@ -784,7 +768,7 @@
       <div class="panel-title">
         <div>
           <h3>Column Matching</h3>
-          <p class="meta">Fix or match spreadsheet columns before rows are staged in Import Review.</p>
+          <p class="meta">Fix or match spreadsheet columns before rows are staged in Needs Review.</p>
         </div>
       </div>
       <div id="mappingPanel" class="card-list"></div>
@@ -803,7 +787,7 @@
       </div>
       <div class="actions">
         <button onclick="syncNow()">Refresh From Supabase</button>
-        <button class="ghost" onclick="flushPendingWrites(true)">Retry Pending Writes</button>
+        <button class="ghost" onclick="flushPendingWrites(true)">Retry items waiting to sync</button>
         <button class="ghost" onclick="loadFromCloud()">Reload Workspace</button>
         <button class="ghost" onclick="downloadBackup()">Download Backup</button>
         <label class="ghost" style="display:inline-flex;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:12px;cursor:pointer;font-weight:700;">
@@ -812,9 +796,9 @@
         </label>
       </div>
       <p class="meta small">Status: <strong id="settingsSyncStatus">Sign in to load workspace</strong></p>
-      <p class="meta small">Pending retry queue: <strong id="pendingQueueCount">0</strong></p>
+      <p class="meta small">Waiting to sync: <strong id="pendingQueueCount">0</strong></p>
       <div id="pendingQueueDetails" class="card-list"></div>
-      <p class="meta small">Direct table writes are on: creates, edits, archives, documents, and import reviews write to normalized <strong>field_ops_*</strong> tables.</p>
+      <p class="meta small">Secure workspace records are on: creates, edits, files, and items needing review write to Supabase workspace tables.</p>
       <p class="meta small">Workspace: <strong id="settingsWorkspaceId">Not loaded</strong></p>
     </section>
 
@@ -830,7 +814,7 @@
         <div class="stat"><span>Workspace ID</span><strong id="diagWorkspaceId">-</strong></div>
         <div class="stat"><span>Session Email</span><strong id="diagSessionEmail">-</strong></div>
         <div class="stat"><span>Sync Status</span><strong id="diagSyncStatus">-</strong></div>
-        <div class="stat"><span>Pending Writes</span><strong id="diagPendingWrites">0</strong></div>
+        <div class="stat"><span>Waiting to Sync</span><strong id="diagPendingWrites">0</strong></div>
         <div class="stat"><span>Supabase</span><strong id="diagSupabaseConnected">Not checked</strong></div>
         <div class="stat"><span>Last Load</span><strong id="diagLastLoadAt">Never</strong></div>
       </div>
@@ -850,7 +834,7 @@
       <div>
         <p class="eyebrow">Quick intake</p>
         <h2 id="addNewTitle">What do you need to add?</h2>
-        <p class="meta">Choose the closest option. If you are not sure, send it to Submitted Request and it will wait in Import Review.</p>
+        <p class="meta">Choose the closest option. If you are not sure, send it to Needs Review and the operations team can route it.</p>
       </div>
       <button id="closeAddNewBtn" class="ghost" type="button">Close</button>
     </div>
@@ -859,12 +843,12 @@
 </div>
 
 
-<div class="modal-backdrop" id="editModal">
+<div class="modal-backdrop" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
   <div class="modal">
     <div class="panel-title">
       <div>
         <h3 id="editModalTitle">Edit Item</h3>
-        <p class="meta">Make changes, then save. Records write directly to Supabase.</p>
+        <p class="meta">Make changes, then save. Changes update the secure workspace records.</p>
       </div>
       <button class="ghost" type="button" onclick="closeEditModal()">Close</button>
     </div>
