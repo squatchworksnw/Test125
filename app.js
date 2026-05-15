@@ -60,7 +60,7 @@ function isDemoMode(){ return Boolean(currentWorkspace?.isDemo); }
 function showAccessDenied(targetView){
   const message = document.getElementById("accessDeniedMessage");
   const role = titleize(currentRole() || "signed-out");
-  if(message) message.textContent = `${role} access does not include ${titleize(targetView)}. Supabase RLS remains the source of truth; this screen is hidden to prevent mistakes.`;
+  if(message) message.textContent = `${role} access does not include ${titleize(targetView)}. Database permission rules still protect the workspace; this screen is hidden to prevent mistakes.`;
   setStatus("Access limited by role");
   setActiveView("accessDenied");
 }
@@ -276,16 +276,16 @@ async function updateRecord(table, idValue, payload){
 }
 
 async function archiveRecord(table, idValue){
-  if(!requireArchivePermission("archive operational records")) throw new Error("Role cannot archive this record");
+  if(!requireArchivePermission("move records out of active work")) throw new Error("Role cannot move this record out of active work");
   if(isDemoMode()) throw new Error("Session demo is read-only. Sign in to save real records.");
-  setStatus("Archiving...");
+  setStatus("Moving out of active work...");
   const archivedAt = new Date().toISOString();
   const archivedBy = currentSession.user.id;
   try{
     const { error } = await archiveRow(table, idValue, workspaceId(), archivedAt, archivedBy);
     if(error) throw error;
-    setStatus("Archived");
-    await refreshAfterWrite("Archived");
+    setStatus("Moved out of active work");
+    await refreshAfterWrite("Moved out of active work");
   }catch(err){
     if(!SyncService.isRetryableWriteError(err)) throw err;
     queueWrite({ action:"archive", table, recordId:idValue, archivedAt, archivedBy });
@@ -430,20 +430,20 @@ function renderPermissionState(){
   const importTitle = document.querySelector("#importReview h2");
   const importMeta = document.querySelector("#importReview .meta");
   const submitButton = document.querySelector("#submissionForm button[type='submit']");
-  if(importTitle) importTitle.textContent = submitterOnly ? "Submit Request" : "Import Review";
+  if(importTitle) importTitle.textContent = submitterOnly ? "Submit Request" : "Needs Review";
   if(importMeta) importMeta.textContent = submitterOnly
     ? "Send a work request, receipt note, photo/document note, or field issue to the operations team."
-    : "Extracted PDF, Excel, CSV, and incoming field notes wait here before becoming live records.";
-  if(submitButton) submitButton.textContent = submitterOnly ? "Submit Request" : "Add to Import Review";
+    : "Requests, files, receipts, estimates, material lists, and spreadsheet rows wait here before becoming active work.";
+  if(submitButton) submitButton.textContent = submitterOnly ? "Submit Request" : "Send for Review";
   const reviewListTitle = document.querySelector("#importReview .panel:nth-of-type(2) h3");
   const reviewListMeta = document.querySelector("#importReview .panel:nth-of-type(2) .meta");
   if(reviewListTitle) reviewListTitle.textContent = submitterOnly ? "My Submissions" : "Waiting for Review";
-  if(reviewListMeta) reviewListMeta.textContent = submitterOnly ? "Requests and uploaded items visible to your account." : "Approve when it is ready to become operational work.";
+  if(reviewListMeta) reviewListMeta.textContent = submitterOnly ? "Requests and uploaded items visible to your account." : "Approve when it is ready to become active work.";
   const documentsTitle = document.querySelector("#documents h2");
   const documentsMeta = document.querySelector("#documents .meta");
   const documentsListTitle = document.querySelector("#documents .panel:nth-of-type(2) h3");
-  if(documentsTitle) documentsTitle.textContent = submitterOnly ? "Uploads" : "Documents";
-  if(documentsMeta) documentsMeta.textContent = submitterOnly ? "Upload photos, PDFs, spreadsheets, and receipts for the operations team." : "PDF, Excel, CSV, photos, estimates, and reports stored in Supabase Storage and linked to records.";
+  if(documentsTitle) documentsTitle.textContent = "Upload Something";
+  if(documentsMeta) documentsMeta.textContent = submitterOnly ? "Upload a photo, receipt, PDF, spreadsheet, or file for the operations team." : "Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file and link it to the right work.";
   if(documentsListTitle) documentsListTitle.textContent = submitterOnly ? "My Uploads" : "Document Library";
 }
 
@@ -456,21 +456,21 @@ function applyRoleVisibility(){
     tab.hidden = !visible;
     tab.setAttribute?.("aria-hidden", visible ? "false" : "true");
     if(viewId === "importReview"){
-      tab.textContent = canSubmitOnly() ? "Submit Request" : "Review Queue";
+      tab.textContent = canSubmitOnly() ? "Submit" : "Needs Review";
     }
     if(viewId === "documents"){
-      tab.textContent = canSubmitOnly() ? "Upload Document" : "Documents";
+      tab.textContent = "Upload";
     }
     if(viewId === "fieldPortal"){
-      tab.textContent = canSubmitOnly() ? "My Home" : "Field Portal";
+      tab.textContent = "My Home";
     }
-    if(viewId === "materials"){
+    if(false && viewId === "materials"){
       tab.textContent = canSubmitOnly() ? "Submit Materials" : "Materials / Inventory";
     }
-    if(viewId === "assets"){
+    if(false && viewId === "assets"){
       tab.textContent = "Assets / Systems";
     }
-    if(viewId === "vehicles"){
+    if(false && viewId === "vehicles"){
       tab.textContent = "Fleet / Mobile Assets";
     }
   });
@@ -482,9 +482,10 @@ function applyRoleVisibility(){
   });
   const primaryAdd = document.getElementById("openAddNewBtn");
   if(primaryAdd){
-    const visible = isAuthenticated() && currentWorkspace && canManageOperations();
+    const visible = isAuthenticated() && currentWorkspace;
     primaryAdd.classList.toggle("hidden", !visible);
     primaryAdd.hidden = !visible;
+    primaryAdd.textContent = canSubmitOnly() ? "+ Send" : "+ Add";
   }
   document.querySelectorAll(".nav-section-label").forEach(label => {
     const section = label.dataset.navSection;
@@ -539,7 +540,7 @@ function renderVendors(){
 
 function rowActions(section, item){
   if(!canManageOperations()) return "";
-  return `<div class="actions no-print"><button class="ghost" onclick="openEditModal('${section}',${app[section].indexOf(item)})">Edit</button><button class="ghost" onclick="deleteItem('${section}',${app[section].indexOf(item)})">Archive</button></div>`;
+  return `<div class="actions no-print"><button class="ghost" onclick="openEditModal('${section}',${app[section].indexOf(item)})">Edit</button><button class="ghost" onclick="deleteItem('${section}',${app[section].indexOf(item)})">Move out of active work</button></div>`;
 }
 
 const editConfig = {
@@ -597,11 +598,11 @@ editForm.addEventListener("submit", async e => {
 });
 
 async function deleteItem(section,index){
-  if(!requireOperationsPermission("archive operational records")) return;
+  if(!requireOperationsPermission("move records out of active work")) return;
   const item = app[section]?.[index];
   const config = editConfig[section];
   if(!item || !config) return;
-  if(!confirm("Archive this item? It will be hidden from active lists but kept for history.")) return;
+  if(!confirm("Move this item out of active work? It will be hidden from active lists but kept for history.")) return;
   try{ await archiveRecord(config.table, item.id); }
   catch(err){ handleWriteError(err); }
 }
@@ -649,30 +650,59 @@ function resetLocalData(){ AppState.resetRuntimeApp(runtimeState); render(); set
 function setActiveView(id){
   activeViewId = id;
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));
-  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+  document.querySelectorAll(".tab").forEach(b=>{
+    const active = b.dataset.view===id;
+    b.classList.toggle("active", active);
+    b.setAttribute?.("aria-current", active ? "page" : "false");
+    b.setAttribute?.("aria-selected", active ? "true" : "false");
+  });
   updateBackButton();
+  document.getElementById("mainContent")?.focus?.({ preventScroll:true });
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
 function showView(id, options = {}){
   if(!document.getElementById(id)) return;
   if(!canAccessView(id)){
+    if(!isAuthenticated()){
+      setActiveView("login");
+      return;
+    }
     if(id !== activeViewId && !options.skipHistory){
       AppState.pushViewHistory(runtimeState, activeViewId);
     }
-    const home = defaultViewForRole();
-    if(home && home !== id && document.getElementById(home)){
-      setStatus("Redirected to your workspace");
-      showView(home, { skipHistory:true });
-    } else {
-      showAccessDenied(id);
-    }
+    showAccessDenied(id);
     return;
   }
   if(id !== activeViewId && !options.skipHistory){
     AppState.pushViewHistory(runtimeState, activeViewId);
   }
   setActiveView(id);
+}
+
+function setupFormDisclosure(){
+  const collapsedForms = ["projectForm","vendorForm","bidForm","materialForm","taskForm","buildingForm","spaceForm","assetForm","vehicleForm","fuelReceiptForm","budgetForm"];
+  collapsedForms.forEach(formId => {
+    const form = document.getElementById(formId);
+    const panel = form?.closest?.(".panel");
+    const title = panel?.querySelector?.(".panel-title");
+    if(!form || !panel || !title || typeof title.appendChild !== "function" || panel.dataset.formDisclosureReady) return;
+    panel.dataset.formCollapsed = "true";
+    panel.dataset.formDisclosureReady = "true";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ghost form-disclosure-btn";
+    button.textContent = formId === "taskForm" ? "Create Work Order" : "Add / Edit";
+    button.setAttribute("aria-expanded", "false");
+    button.addEventListener("click", () => {
+      const collapsed = panel.dataset.formCollapsed !== "false";
+      panel.dataset.formCollapsed = collapsed ? "false" : "true";
+      button.textContent = collapsed ? "Hide Form" : (formId === "taskForm" ? "Create Work Order" : "Add / Edit");
+      button.setAttribute("aria-expanded", collapsed ? "true" : "false");
+      if(collapsed) form.querySelector?.("input,select,textarea,button")?.focus?.();
+    });
+    title.appendChild(button);
+  });
 }
 
 function goBackView(){
@@ -836,7 +866,7 @@ async function handleSpreadsheetFile(file){
     extractionPreview.value = JSON.stringify(rows.slice(0,12), null, 2);
     renderMappingPanel();
     await loadWorkspaceData();
-    alert(`${rows.length} row${rows.length === 1 ? "" : "s"} parsed. Review the preview, fix column matching, then stage rows to Import Review.`);
+    alert(`${rows.length} row${rows.length === 1 ? "" : "s"} parsed. Review the preview, fix column matching, then stage rows to Needs Review.`);
   }catch(err){ handleWriteError(err); }
 }
 
@@ -860,7 +890,7 @@ async function handlePdfFile(file){
     const proposedType = normalizeProposedType(pdfImportType.value);
     await createImportReview(`PDF: ${file.name}`, proposedType, { file_name:file.name, extracted_text:text }, `Review extracted PDF text from ${file.name}`, docId);
     await loadWorkspaceData();
-    alert("PDF staged in Import Review.");
+    alert("PDF staged in Needs Review.");
   }catch(err){ handleWriteError(err); }
 }
 
@@ -885,7 +915,7 @@ async function stageMappedRows(){
     AppState.resetStagedImport(runtimeState);
     renderMappingPanel();
     await loadWorkspaceData();
-    alert(`${added} row${added === 1 ? "" : "s"} staged in Import Review.`);
+    alert(`${added} row${added === 1 ? "" : "s"} staged in Needs Review.`);
   }catch(err){ handleWriteError(err); }
 }
 
@@ -980,4 +1010,5 @@ if(window.pdfjsLib){
 }
 
 InteractionService?.init?.();
+setupFormDisclosure();
 initializeAuth();
