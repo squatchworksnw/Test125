@@ -86,6 +86,10 @@
     return bucket.createSignedUrl(storagePath, expiresIn);
   }
 
+  function createFuelReceiptWithBudget(payload){
+    return supabaseClient.rpc("field_ops_create_fuel_receipt_with_budget", payload);
+  }
+
   window.FieldOps.Services.supabase = {
     SUPABASE_URL,
     SUPABASE_KEY,
@@ -100,6 +104,7 @@
     restoreRow,
     insertDocumentMetadata,
     uploadDocument,
-    createDocumentPreviewUrl
+    createDocumentPreviewUrl,
+    createFuelReceiptWithBudget
   };
 })();

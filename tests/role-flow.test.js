@@ -159,12 +159,46 @@ class FakeFormData {
 const tables = {
   field_ops_import_reviews: [],
   field_ops_documents: [],
-  field_ops_work_orders: []
+  field_ops_work_orders: [],
+  field_ops_fuel_receipts: [],
+  field_ops_budget_items: [],
+  field_ops_vehicles: []
 };
 
 const makeRow = row => ({ id: row.id || `id-${Math.random().toString(36).slice(2)}`, updated_at: new Date().toISOString(), archived_at: null, ...row });
 
 const supabaseClient = {
+  lastRpcCall: null,
+  rpc(name, payload) {
+    supabaseClient.lastRpcCall = { name, payload };
+    if(name !== "field_ops_create_fuel_receipt_with_budget"){
+      return Promise.resolve({ data:null, error:new Error(`Unexpected RPC ${name}`) });
+    }
+    const receipt = makeRow({
+      workspace_id: payload.p_workspace_id,
+      vehicle_id: payload.p_vehicle_id,
+      receipt_date: payload.p_receipt_date || "2026-05-15",
+      gas_station: payload.p_gas_station,
+      gallons: payload.p_gallons,
+      total_amount: payload.p_total_amount,
+      price_per_gallon: payload.p_price_per_gallon,
+      odometer: payload.p_odometer,
+      notes: payload.p_notes
+    });
+    const budget = makeRow({
+      workspace_id: payload.p_workspace_id,
+      fuel_receipt_id: receipt.id,
+      label: "Fuel - test",
+      item_type: "fuel",
+      status: "submitted",
+      amount: payload.p_total_amount,
+      date_received: receipt.receipt_date
+    });
+    receipt.budget_item_id = budget.id;
+    tables.field_ops_fuel_receipts.push(receipt);
+    tables.field_ops_budget_items.push(budget);
+    return Promise.resolve({ data:{ status:"success", fuelReceipt:receipt, budgetItem:budget }, error:null });
+  },
   from(table) {
     if (!tables[table]) tables[table] = [];
     let operation = {};
@@ -341,6 +375,27 @@ async function __acceptanceFlow(){
   currentWorkspace.role = "admin";
   app.submissions = tables.field_ops_import_reviews.map(fromImportReview);
   app.files = tables.field_ops_documents.map(fromDocument);
+
+  tables.field_ops_vehicles.push(makeRow({
+    id:"vehicle-1",
+    workspace_id:"workspace-1",
+    name:"Pilot Van",
+    status:"active"
+  }));
+  app.vehicles = tables.field_ops_vehicles.map(fromVehicle);
+  fuelVehicle.value = "vehicle-1";
+  fuelDate.value = "2026-05-15";
+  fuelVendor.value = "Pilot Fuel";
+  fuelGallons.value = "7.5";
+  fuelTotal.value = "31.25";
+  fuelPrice.value = "4.167";
+  fuelOdometer.value = "120345";
+  fuelNotes.value = "Role flow fuel receipt.";
+  await addFuelReceipt({ preventDefault(){}, currentTarget:fuelReceiptForm, target:fuelReceiptForm });
+  if (supabaseClient.lastRpcCall?.name !== "field_ops_create_fuel_receipt_with_budget") throw new Error("Fuel receipt did not use transaction RPC");
+  if (tables.field_ops_fuel_receipts.length !== 1) throw new Error("Fuel receipt RPC did not create receipt");
+  if (tables.field_ops_budget_items.length !== 1) throw new Error("Fuel receipt RPC did not create budget item");
+  if (tables.field_ops_fuel_receipts[0].budget_item_id !== tables.field_ops_budget_items[0].id) throw new Error("Fuel receipt RPC did not link budget item");
   renderAuthState();
   if (!canAccessView("importReview")) throw new Error("Admin cannot see import review");
 

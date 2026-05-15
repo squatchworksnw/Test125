@@ -107,15 +107,58 @@
 
   async function addFuelReceipt(e){
     e.preventDefault();
+    const form = e.currentTarget || e.target;
+    const submitButton = form?.querySelector?.("button[type='submit']");
+    const originalText = submitButton?.textContent || "Add Fuel Receipt";
     try{
-      const receiptPayload = { id:id(), ...Mappers.fuelReceiptPayloadFromForm({ vehicleId:fuelVehicle.value, date:fuelDate.value, vendor:fuelVendor.value, gallons:fuelGallons.value, totalAmount:fuelTotal.value, pricePerGallon:fuelPrice.value, odometer:fuelOdometer.value, file:fuelReceiptFile.value, notes:fuelNotes.value }) };
-      const budgetId = id();
-      const receipt = await insertRecord("field_ops_fuel_receipts", receiptPayload);
-      const vehicle = app.vehicles.find(v => v.id === receipt.vehicle_id);
-      const budget = await insertRecord("field_ops_budget_items", Mappers.fuelReceiptBudgetPayload(receipt, vehicle, budgetId));
-      await updateRecord("field_ops_fuel_receipts", receipt.id, { budget_item_id: budget.id });
-      e.target.reset();
-    }catch(err){ handleWriteError(err); }
+      if(!requireOperationsPermission("create fuel receipts")) return;
+      if(!fuelVehicle.value){
+        setInlineState("fuelReceiptSaveState", "Choose a vehicle before saving.", "failed");
+        return;
+      }
+      if(submitButton){
+        submitButton.disabled = true;
+        submitButton.textContent = "Saving...";
+      }
+      setInlineState("fuelReceiptSaveState", "Saving fuel receipt and budget item...", "pending");
+      setStatus("Saving fuel receipt...");
+      const payload = {
+        p_workspace_id: workspaceId(),
+        p_vehicle_id: fuelVehicle.value,
+        p_receipt_date: fuelDate.value || null,
+        p_gas_station: fuelVendor.value || null,
+        p_gallons: fuelGallons.value === "" ? null : Number(fuelGallons.value),
+        p_total_amount: fuelTotal.value === "" ? 0 : Number(fuelTotal.value),
+        p_price_per_gallon: fuelPrice.value === "" ? null : Number(fuelPrice.value),
+        p_odometer: fuelOdometer.value === "" ? null : Number(fuelOdometer.value),
+        p_notes: [fuelReceiptFile.value ? `Receipt/link: ${fuelReceiptFile.value}` : "", fuelNotes.value].filter(Boolean).join("\n") || null
+      };
+      const { data, error } = await createFuelReceiptWithBudget(payload);
+      if(error) throw withFuelReceiptCallDetails(error, payload);
+      if(data?.status !== "success") throw withFuelReceiptCallDetails(new Error("Fuel receipt transaction did not return success."), payload);
+      form.reset();
+      setInlineState("fuelReceiptSaveState", "Fuel receipt saved with budget item.", "saved");
+      await refreshAfterWrite?.("Fuel receipt saved with budget item");
+    }catch(err){
+      console.error(err);
+      setInlineState("fuelReceiptSaveState", `Fuel receipt save failed: ${fuelReceiptErrorMessage(err)}`, "failed");
+      handleWriteError(err);
+    }finally{
+      if(submitButton){
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+      }
+    }
+  }
+
+  function withFuelReceiptCallDetails(error, payload){
+    error.fieldOpsCall = { rpc:"field_ops_create_fuel_receipt_with_budget", payload };
+    return error;
+  }
+
+  function fuelReceiptErrorMessage(err){
+    const base = permissionAwareErrorMessage(err);
+    return err?.fieldOpsCall ? `${base} (${err.fieldOpsCall.rpc})` : base;
   }
 
   function renderFleet(){
