@@ -735,6 +735,11 @@ function openMySubmissions(){
   setFormCollapsed("submissionForm", true);
 }
 
+function openUploadFile(){
+  showView("documents");
+  setFormCollapsed("fileForm", false);
+}
+
 function openSupplyRequest(){
   showView("materials");
   setFormCollapsed("materialForm", false);

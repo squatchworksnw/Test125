@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -89,7 +89,7 @@
       </div>
       <div class="quick-actions no-print" aria-label="Field portal actions">
         <button type="button" onclick="openSubmitRequest()">Submit New Request</button>
-        <button type="button" class="ghost" onclick="showView('documents')">Upload Photo / Document</button>
+        <button type="button" class="ghost" onclick="openUploadFile()">Upload Photo / Document</button>
         <button type="button" class="ghost" onclick="openSubmitRequest()">Submit Estimate</button>
         <button type="button" class="ghost" onclick="openSupplyRequest()">Purchase / Supply Request</button>
       </div>
@@ -101,7 +101,7 @@
         <strong>Start here</strong>
         <em>Send location, urgency, notes, and an optional file.</em>
       </button>
-      <button class="workspace-card files" type="button" onclick="showView('documents')">
+      <button class="workspace-card files" type="button" onclick="openUploadFile()">
         <span>Upload Photo / Document</span>
         <strong>Attach proof</strong>
         <em>Receipts, photos, PDFs, spreadsheets, estimates, and supporting documents.</em>
@@ -571,7 +571,7 @@
           <h2>Fuel Receipts</h2>
           <p class="meta">Gas receipts attached to vehicles, documents, odometer readings, and budget tracking.</p>
         </div>
-        <button class="ghost" type="button" onclick="showView('documents')">Upload Receipt</button>
+        <button class="ghost" type="button" onclick="openUploadFile()">Upload Receipt</button>
       </div>
       <form id="fuelReceiptForm">
         <label>Vehicle<select id="fuelVehicle"></select></label>
