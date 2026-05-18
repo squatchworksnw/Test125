@@ -350,8 +350,14 @@ async function addSpace(e){ e.preventDefault(); try{ await insertRecord("field_o
 async function addAsset(e){ e.preventDefault(); try{ await insertRecord("field_ops_assets", Mappers.assetPayloadFromForm({ buildingId:assetBuilding.value, spaceId:assetSpace.value, name:assetName.value, assetTag:assetTag.value, category:assetCategory.value, status:assetStatus.value, notes:assetNotes.value })); e.target.reset(); }catch(err){ handleWriteError(err); } }
 async function addVendor(e){ e.preventDefault(); try{ await insertRecord("field_ops_vendors", Mappers.vendorPayloadFromForm({ name:vendorName.value, vendorType:vendorType.value, contactName:vendorContact.value, phone:vendorPhone.value, email:vendorEmail.value, status:vendorStatus.value, insuranceExpiresOn:vendorInsurance.value, notes:vendorNotes.value })); e.target.reset(); }catch(err){ handleWriteError(err); } }
 function handleWriteError(err){
+  const message = permissionAwareErrorMessage(err);
+  if(String(err?.message || '').includes('Session demo is read-only')){
+    console.warn(message);
+    setStatus(message);
+    return;
+  }
   console.error(err);
-  setStatus(permissionAwareErrorMessage(err));
+  setStatus(message);
 }
 
 function isPermissionError(err){
