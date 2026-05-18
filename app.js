@@ -686,7 +686,7 @@ function showView(id, options = {}){
 }
 
 function setupFormDisclosure(){
-  const collapsedForms = ["projectForm","vendorForm","bidForm","materialForm","taskForm","buildingForm","spaceForm","assetForm","vehicleForm","fuelReceiptForm","budgetForm"];
+  const collapsedForms = ["submissionForm","fileForm","projectForm","vendorForm","bidForm","materialForm","taskForm","buildingForm","spaceForm","assetForm","vehicleForm","fuelReceiptForm","budgetForm"];
   collapsedForms.forEach(formId => {
     const form = document.getElementById(formId);
     const panel = form?.closest?.(".panel");
@@ -697,12 +697,13 @@ function setupFormDisclosure(){
     const button = document.createElement("button");
     button.type = "button";
     button.className = "ghost form-disclosure-btn";
-    button.textContent = formId === "taskForm" ? "Create Work Order" : "Add / Edit";
+    const defaultLabel = formId === "taskForm" ? "Create Work Order" : formId === "submissionForm" ? "Submit Request" : formId === "fileForm" ? "Upload File" : "Add / Edit";
+    button.textContent = defaultLabel;
     button.setAttribute("aria-expanded", "false");
     button.addEventListener("click", () => {
       const collapsed = panel.dataset.formCollapsed !== "false";
       panel.dataset.formCollapsed = collapsed ? "false" : "true";
-      button.textContent = collapsed ? "Hide Form" : (formId === "taskForm" ? "Create Work Order" : "Add / Edit");
+      button.textContent = collapsed ? "Hide Form" : defaultLabel;
       button.setAttribute("aria-expanded", collapsed ? "true" : "false");
       if(collapsed) form.querySelector?.("input,select,textarea,button")?.focus?.();
     });
