@@ -437,18 +437,18 @@ function renderPermissionState(){
   const submitButton = document.querySelector("#submissionForm button[type='submit']");
   if(importTitle) importTitle.textContent = submitterOnly ? "Submit Request" : "Needs Review";
   if(importMeta) importMeta.textContent = submitterOnly
-    ? "Send a work request, receipt note, photo/document note, or field issue to the operations team."
-    : "Requests, files, receipts, estimates, material lists, and spreadsheet rows wait here before becoming active work.";
+    ? "Send a work request, receipt note, photo/document note, supply request, or field issue to the operations team."
+    : "Requests, files, receipts, estimates, supply/material requests, and spreadsheet rows wait here before becoming active work.";
   if(submitButton) submitButton.textContent = submitterOnly ? "Submit Request" : "Send for Review";
   const reviewListTitle = document.querySelector("#importReview .panel:nth-of-type(2) h3");
   const reviewListMeta = document.querySelector("#importReview .panel:nth-of-type(2) .meta");
-  if(reviewListTitle) reviewListTitle.textContent = submitterOnly ? "My Submissions" : "Waiting for Review";
-  if(reviewListMeta) reviewListMeta.textContent = submitterOnly ? "Requests and uploaded items visible to your account." : "Approve when it is ready to become active work.";
+  if(reviewListTitle) reviewListTitle.textContent = submitterOnly ? "My Submissions" : "Needs Review";
+  if(reviewListMeta) reviewListMeta.textContent = submitterOnly ? "Requests and uploaded items visible to your account." : "Submitted items, uploads, receipts, estimates, and supply requests stay here until they are reviewed.";
   const documentsTitle = document.querySelector("#documents h2");
   const documentsMeta = document.querySelector("#documents .meta");
   const documentsListTitle = document.querySelector("#documents .panel:nth-of-type(2) h3");
   if(documentsTitle) documentsTitle.textContent = "Upload Something";
-  if(documentsMeta) documentsMeta.textContent = submitterOnly ? "Upload a photo, receipt, PDF, spreadsheet, or file for the operations team." : "Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file and link it to the right work.";
+  if(documentsMeta) documentsMeta.textContent = submitterOnly ? "Upload a photo, receipt, PDF, spreadsheet, or file for the operations team. Uploading a receipt or proof helps route and review the expense, but does not replace any required accounting receipt process. Uploads go to Needs Review first." : "Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file and link it to the right work. Uploading a receipt or proof helps route and review the expense, but does not replace any required accounting receipt process. Accounting routing can be added later if needed.";
   if(documentsListTitle) documentsListTitle.textContent = submitterOnly ? "My Uploads" : "Document Library";
 }
 
@@ -709,6 +709,40 @@ function setupFormDisclosure(){
     });
     title.appendChild(button);
   });
+}
+
+
+function setFormCollapsed(formId, collapsed){
+  const form = document.getElementById(formId);
+  const panel = form?.closest?.(".panel");
+  if(!panel) return;
+  panel.dataset.formCollapsed = collapsed ? "true" : "false";
+  const button = panel.querySelector?.(".form-disclosure-btn");
+  if(button){
+    const defaultLabel = formId === "taskForm" ? "Create Work Order" : formId === "submissionForm" ? "Submit Request" : formId === "fileForm" ? "Upload File" : "Add / Edit";
+    button.textContent = collapsed ? defaultLabel : "Hide Form";
+    button.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  }
+}
+
+function openSubmitRequest(){
+  showView("importReview");
+  setFormCollapsed("submissionForm", false);
+}
+
+function openMySubmissions(){
+  showView("importReview");
+  setFormCollapsed("submissionForm", true);
+}
+
+function openSupplyRequest(){
+  showView("materials");
+  setFormCollapsed("materialForm", false);
+}
+
+function showAssignedWorkUnavailable(){
+  setStatus("Assigned work is not available yet.");
+  InteractionService?.showToast?.("Assigned work is not available yet.", "pending");
 }
 
 function goBackView(){

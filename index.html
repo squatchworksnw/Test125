@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Field Operations Command Center</title>
 
-<link rel="stylesheet" href="styles/tokens/tokens.css?v=20260518-qa4" />
-<link rel="stylesheet" href="styles.css?v=20260518-qa4" />
+<link rel="stylesheet" href="styles/tokens/tokens.css?v=20260518-qa5" />
+<link rel="stylesheet" href="styles.css?v=20260518-qa5" />
 </head>
 
 <body data-auth="signed-out" data-role="signed-out">
@@ -85,13 +85,13 @@
       <div>
         <p class="eyebrow">Field portal</p>
         <h2>Send the operations team what they need.</h2>
-        <p class="meta">Requests, files, estimates, and material lists go through Needs Review before they become active work.</p>
+        <p class="meta">Requests, files, estimates, receipts, and purchase or supply requests go through Needs Review before they become active work.</p>
       </div>
       <div class="quick-actions no-print" aria-label="Field portal actions">
-        <button type="button" onclick="showView('importReview')">Submit New Request</button>
+        <button type="button" onclick="openSubmitRequest()">Submit New Request</button>
         <button type="button" class="ghost" onclick="showView('documents')">Upload Photo / Document</button>
         <button type="button" class="ghost" onclick="showView('importReview')">Submit Estimate</button>
-        <button type="button" class="ghost" onclick="showView('materials')">Submit Material List</button>
+        <button type="button" class="ghost" onclick="openSupplyRequest()">Purchase / Supply Request</button>
       </div>
     </section>
 
@@ -107,19 +107,19 @@
         <em>Receipts, photos, PDFs, spreadsheets, estimates, and supporting documents.</em>
       </button>
       <button class="workspace-card materials" type="button" onclick="showView('materials')">
-        <span>Submit Material List</span>
+        <span>Purchase / Supply Request</span>
         <strong>Review first</strong>
-        <em>Lightweight takeoffs and purchase needs for approval.</em>
+        <em>Materials, supplies, event needs, gifts, marketing items, or other order requests.</em>
       </button>
-      <button class="workspace-card maintenance" type="button" onclick="showView('importReview')">
+      <button class="workspace-card maintenance" type="button" onclick="openMySubmissions()">
         <span>View My Submissions</span>
         <strong id="portalSubmissionCount">0 sent</strong>
         <em>Track requests and uploaded items visible to your account.</em>
       </button>
-      <button class="workspace-card calendar" type="button">
+      <button class="workspace-card calendar" type="button" onclick="showAssignedWorkUnavailable()">
         <span>Assigned Work</span>
-        <strong>Coming from workspace permissions</strong>
-        <em>Assigned work can appear here when the workspace grants access.</em>
+        <strong>Not available yet</strong>
+        <em>Assigned work will appear here when a manager assigns something to you.</em>
       </button>
     </section>
   </section>
@@ -208,9 +208,9 @@
         <em>Contracting work, remodels, repairs, budgets, and timelines.</em>
       </button>
       <button class="workspace-card materials" type="button" onclick="showView('materials')">
-        <span>Materials / Takeoffs</span>
+        <span>Supplies / Materials</span>
         <strong>Review first</strong>
-        <em>Contractor material lists staged for approval before becoming budget records.</em>
+        <em>Materials, supplies, event needs, gifts, marketing items, or other order requests.</em>
       </button>
       <button class="workspace-card fleet" type="button" onclick="showView('vehicles')">
         <span>Vehicles</span>
@@ -329,7 +329,7 @@
       <div class="panel-title">
         <div>
           <h3>Needs Review</h3>
-          <p class="meta">Approve when it is ready to become operational work.</p>
+          <p class="meta">Submitted items, uploads, receipts, estimates, and supply requests stay here until they are reviewed.</p>
         </div>
       </div>
       <div id="submissionList" class="card-list"></div>
@@ -421,27 +421,27 @@
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h2>Materials / Takeoffs</h2>
-          <p class="meta">Fast material lists for contractor review. Approved lists become budget items linked to projects, work orders, vendors, and receipts.</p>
+          <h2>Supplies / Materials</h2>
+          <p class="meta">This can be used for materials, supplies, event needs, gifts, marketing items, or other purchase/order requests. Items wait in Needs Review before anything becomes official.</p>
         </div>
       </div>
       <form id="materialForm" class="mobile-short-form">
-        <label class="full">List title<input id="materialTitle" required placeholder="Restroom 2 sink repair materials" /></label>
+        <label class="full">Request title<input id="materialTitle" required placeholder="Restroom 2 sink repair supplies, event gifts, marketing items..." /></label>
         <label>Project<select id="materialProject"></select></label>
         <label>Work order<select id="materialWorkOrder"></select></label>
         <label>Vendor<select id="materialVendor"></select></label>
         <label>Document / receipt<select id="materialDocument"></select></label>
-        <label class="full">Material lines<textarea id="materialLines" required placeholder="Description | quantity | unit | estimated unit cost | actual cost&#10;P-trap kit | 1 | each | 18.50&#10;Supply line | 2 | each | 9.25"></textarea></label>
-        <label class="full">Notes<textarea id="materialNotes" placeholder="Why it is needed, substitution notes, approval context..."></textarea></label>
+        <label class="full">Supply / material lines<textarea id="materialLines" required placeholder="Description | quantity | unit | estimated unit cost | actual cost&#10;P-trap kit | 1 | each | 18.50&#10;Supply line | 2 | each | 9.25"></textarea></label>
+        <label class="full">Notes<textarea id="materialNotes" placeholder="Why it is needed, timing, substitution notes, approval context..."></textarea></label>
         <p id="materialSaveState" class="meta full" data-state="">Ready</p>
-        <div class="actions full"><button type="submit">Submit Material List</button></div>
+        <div class="actions full"><button type="submit">Submit Supply / Material Request</button></div>
       </form>
     </section>
     <section class="panel">
       <div class="panel-title">
         <div>
-          <h3>Materials Needing Review</h3>
-          <p class="meta">Lists wait here until Owner/Admin approves them into budget tracking.</p>
+          <h3>Supplies / Materials Needing Review</h3>
+          <p class="meta">Requests wait here until Owner/Admin reviews and routes them.</p>
         </div>
       </div>
       <div id="materialReviewList" class="card-list"></div>
@@ -635,13 +635,14 @@
       <div class="panel-title">
         <div>
           <h2>Upload Something</h2>
-          <p class="meta">Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file. The app routes it safely behind the scenes.</p>
+          <p class="meta">Upload a photo, receipt, PDF estimate or invoice, spreadsheet, or supporting file. Uploads go to Needs Review first. Uploading a receipt or proof helps route and review the expense, but does not replace any required accounting receipt process. Accounting routing can be added later if needed.</p>
         </div>
         <button class="ghost" type="button" data-admin-only onclick="showView('importCenter')">Extract From File</button>
       </div>
       <form id="fileForm" class="mobile-upload-form">
         <label>File name or link<input id="fileName" required placeholder="estimate.pdf, inspection report, photo link..." /></label>
         <label>What kind of file is this?<select id="fileType"><option>Photo</option><option>Fuel Receipt</option><option>Estimate</option><option>Invoice</option><option>Spreadsheet</option><option>Contract</option><option>Bid</option><option>Inspection</option><option>Report</option><option>Checklist</option><option>Other / Not sure</option></select></label>
+        <p class="meta full">Uploading a receipt or proof helps route and review the expense, but does not replace any required accounting receipt process.</p>
         <label>Upload file<input id="documentUpload" type="file" accept=".pdf,.csv,.xlsx,.xls,image/*" /></label>
         <label>Related building<select id="fileBuilding"></select></label>
         <label>Related space / room<select id="fileSpace"></select></label>
@@ -861,29 +862,29 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="state/app-state.js?v=20260518-qa4"></script>
-<script src="components/cards.js?v=20260518-qa4"></script>
-<script src="components/forms.js?v=20260518-qa4"></script>
-<script src="auth/roles.js?v=20260518-qa4"></script>
-<script src="auth/session.js?v=20260518-qa4"></script>
-<script src="services/supabase-service.js?v=20260518-qa4"></script>
-<script src="services/mappers.js?v=20260518-qa4"></script>
-<script src="services/import-review-service.js?v=20260518-qa4"></script>
-<script src="services/materials-service.js?v=20260518-qa4"></script>
-<script src="services/demo-service.js?v=20260518-qa4"></script>
-<script src="services/interaction-service.js?v=20260518-qa4"></script>
-<script src="sync/pending-queue.js?v=20260518-qa4"></script>
-<script src="services/auth-service.js?v=20260518-qa4"></script>
-<script src="services/sync-service.js?v=20260518-qa4"></script>
-<script src="views/registry.js?v=20260518-qa4"></script>
-<script src="views/today-dashboard.js?v=20260518-qa4"></script>
-<script src="views/work-orders.js?v=20260518-qa4"></script>
-<script src="views/documents.js?v=20260518-qa4"></script>
-<script src="views/projects-budget.js?v=20260518-qa4"></script>
-<script src="views/materials.js?v=20260518-qa4"></script>
-<script src="views/review-queue.js?v=20260518-qa4"></script>
-<script src="views/fleet.js?v=20260518-qa4"></script>
-<script src="app.js?v=20260518-qa4"></script>
+<script src="state/app-state.js?v=20260518-qa5"></script>
+<script src="components/cards.js?v=20260518-qa5"></script>
+<script src="components/forms.js?v=20260518-qa5"></script>
+<script src="auth/roles.js?v=20260518-qa5"></script>
+<script src="auth/session.js?v=20260518-qa5"></script>
+<script src="services/supabase-service.js?v=20260518-qa5"></script>
+<script src="services/mappers.js?v=20260518-qa5"></script>
+<script src="services/import-review-service.js?v=20260518-qa5"></script>
+<script src="services/materials-service.js?v=20260518-qa5"></script>
+<script src="services/demo-service.js?v=20260518-qa5"></script>
+<script src="services/interaction-service.js?v=20260518-qa5"></script>
+<script src="sync/pending-queue.js?v=20260518-qa5"></script>
+<script src="services/auth-service.js?v=20260518-qa5"></script>
+<script src="services/sync-service.js?v=20260518-qa5"></script>
+<script src="views/registry.js?v=20260518-qa5"></script>
+<script src="views/today-dashboard.js?v=20260518-qa5"></script>
+<script src="views/work-orders.js?v=20260518-qa5"></script>
+<script src="views/documents.js?v=20260518-qa5"></script>
+<script src="views/projects-budget.js?v=20260518-qa5"></script>
+<script src="views/materials.js?v=20260518-qa5"></script>
+<script src="views/review-queue.js?v=20260518-qa5"></script>
+<script src="views/fleet.js?v=20260518-qa5"></script>
+<script src="app.js?v=20260518-qa5"></script>
 </body>
 </html>
 
