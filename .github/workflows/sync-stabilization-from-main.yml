@@ -1,0 +1,49 @@
+name: Sync Stabilization Files From Main
+
+on:
+  push:
+    branches: [v2]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-files:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v2
+      - name: Copy stabilization files from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            "index.html"
+            "app.js"
+            "styles.css"
+            "services/auth-service.js"
+            "services/interaction-service.js"
+            "services/sync-service.js"
+            "views/materials.js"
+            "views/review-queue.js"
+            "views/work-orders.js"
+          )
+          for file in "${files[@]}"; do
+            mkdir -p "$(dirname "$file")"
+            curl -fsSL "https://raw.githubusercontent.com/squatchworksnw/Test125/main/$file" -o "$file"
+          done
+      - name: Commit stabilization sync
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html app.js styles.css services/auth-service.js services/interaction-service.js services/sync-service.js views/materials.js views/review-queue.js views/work-orders.js
+          if git diff --cached --quiet; then
+            echo "No stabilization changes needed."
+          else
+            git commit -m "Sync stabilization files from main"
+            git push origin HEAD:v2
+          fi
