@@ -1,0 +1,49 @@
+name: Apply Cache Bust To V2
+
+on:
+  push:
+    branches: [v2]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cache-bust:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v2
+      - name: Add asset version to local files
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8-sig')
+          version = 'v=20260518-qa2'
+          local = [
+            'styles/tokens/tokens.css','styles.css','state/app-state.js','components/cards.js','components/forms.js',
+            'auth/roles.js','auth/session.js','services/supabase-service.js','services/mappers.js',
+            'services/import-review-service.js','services/materials-service.js','services/demo-service.js',
+            'services/interaction-service.js','sync/pending-queue.js','services/auth-service.js','services/sync-service.js',
+            'views/registry.js','views/today-dashboard.js','views/work-orders.js','views/documents.js',
+            'views/projects-budget.js','views/materials.js','views/review-queue.js','views/fleet.js','app.js'
+          ]
+          for asset in local:
+            html = re.sub(rf'(?P<prefix>(?:href|src)="){re.escape(asset)}(?:\?v=[^"?]+)?"', rf'\g<prefix>{asset}?{version}"', html)
+          p.write_text('\ufeff' + html.lstrip('\ufeff'), encoding='utf-8')
+      - name: Commit cache bust
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No cache bust changes needed."
+          else
+            git commit -m "Add cache busting for stabilization assets"
+            git push origin HEAD:v2
+          fi
