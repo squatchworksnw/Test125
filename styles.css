@@ -24,6 +24,22 @@ body::before{
   mix-blend-mode:multiply;
 }
 
+.skip-link{
+  position:fixed;
+  left:12px;
+  top:12px;
+  z-index:120;
+  transform:translateY(-160%);
+  background:var(--navy);
+  color:#fff;
+  border-radius:999px;
+  padding:10px 14px;
+  font-weight:850;
+  text-decoration:none;
+  box-shadow:var(--shadow);
+}
+.skip-link:focus{transform:translateY(0)}
+
 header{
   position:sticky;
   top:0;
@@ -96,15 +112,13 @@ header{
   font-weight:750;
   box-shadow:0 2px 8px rgba(47,51,37,.06);
 }
-.top-nav button:not(.hidden) + button[data-nav-group]:not(.hidden){margin-top:0}
-.top-nav button[data-nav-group="operations"],.top-nav button[data-nav-group="places"],.top-nav button[data-nav-group="support"],.top-nav button[data-nav-group="oversight"]{border-top-width:3px}
 .top-nav button.active{background:var(--navy);color:white;border-color:var(--navy)}
 .top-nav .nav-action{background:var(--brass);color:var(--navy);border-color:rgba(31,44,58,.12)}
 
 main{max-width:1180px;margin:0 auto 0 258px;padding:14px 14px 60px}
 .view{display:none}
 .view.active{display:block}
-body[data-auth="signed-out"] header,body[data-auth="signed-out"] main{display:none}
+body[data-auth="signed-out"] header,body[data-auth="signed-out"] main,body[data-auth="signed-out"] .skip-link{display:none}
 body[data-auth="signed-out"] #login{display:flex}
 body[data-auth="signed-in"] #login{display:none!important}
 .pilot-indicator{
@@ -399,6 +413,10 @@ form,.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1
 label{display:grid;gap:4px;font-size:.86rem;color:var(--muted)}
 input,select,textarea{width:100%;border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--paper-soft);font:inherit;color:var(--text)}
 input:focus,select:focus,textarea:focus{outline:2px solid rgba(79,127,130,.25);border-color:var(--teal)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
+  outline:3px solid rgba(200,148,69,.68);
+  outline-offset:3px;
+}
 textarea{min-height:90px;resize:vertical}
 .full{grid-column:1/-1}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
@@ -406,6 +424,8 @@ button{border:none;background:var(--teal-deep);color:white;border-radius:12px;pa
 button:hover{background:var(--navy)}
 button.ghost{background:var(--paper-soft);color:var(--text);border:1px solid var(--border)}
 button.danger{background:var(--danger)}
+.panel[data-form-collapsed="true"] > form{display:none}
+.form-disclosure-btn{margin-left:auto}
 
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:720px;background:var(--paper-soft);border-radius:12px;overflow:hidden}
@@ -552,11 +572,11 @@ a.file-link{color:var(--teal-deep);font-weight:700;text-decoration:underline}
     bottom:0;
     width:auto;
     height:72px;
-    display:flex;
-    flex-direction:row;
+    display:grid;
+    grid-template-columns:repeat(5,minmax(0,1fr));
     align-items:center;
-    gap:8px;
-    overflow-x:auto;
+    gap:6px;
+    overflow-x:hidden;
     overflow-y:hidden;
     padding:8px 10px;
     border-radius:18px 18px 0 0;
@@ -565,14 +585,15 @@ a.file-link{color:var(--teal-deep);font-weight:700;text-decoration:underline}
   }
   .nav-section-label{display:none}
   .top-nav button{
-    flex:0 0 auto;
-    width:auto;
-    min-width:118px;
+    width:100%;
+    min-width:0;
     min-height:52px;
     justify-content:center;
     text-align:center;
     border-radius:14px;
-    padding:9px 10px;
+    padding:8px 6px;
+    font-size:.8rem;
+    white-space:normal;
   }
   .pilot-indicator{left:10px;right:10px;bottom:82px;text-align:center}
   .home-hero{display:grid}

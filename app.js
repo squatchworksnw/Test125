@@ -10,8 +10,7 @@ const {
   restoreRow,
   insertDocumentMetadata,
   uploadDocument,
-  createDocumentPreviewUrl,
-  createFuelReceiptWithBudget
+  createDocumentPreviewUrl
 } = window.FieldOps.Services.supabase;
 const {
   esc,

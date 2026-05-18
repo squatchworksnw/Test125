@@ -8,7 +8,7 @@ function renderTasks(){
   const archivedList = document.getElementById("archivedTaskList");
   if(archivedList){
     const archived = app.archivedTasks || [];
-    archivedList.innerHTML = archived.length ? archived.map(t => `${workOrderCard(t)}<div class="actions no-print"><button class="ghost" type="button" onclick="restoreWorkOrder('${t.id}')">Restore</button></div>`).join("") : empty("No archived work orders.");
+    archivedList.innerHTML = archived.length ? archived.map(t => `${workOrderCard(t)}<div class="actions no-print"><button class="ghost" type="button" onclick="restoreWorkOrder('${t.id}')">Restore</button></div>`).join("") : empty("No inactive work orders.");
   }
   const options = `<option value="">No related work order</option>` + tasks.map(t => `<option value="${t.id}">${esc(t.workOrderNumber ? `${t.workOrderNumber} - ${t.name}` : t.name)}</option>`).join("");
   if(document.getElementById("budgetWorkOrder")) document.getElementById("budgetWorkOrder").innerHTML = options;
@@ -20,7 +20,7 @@ function renderTasks(){
 function workOrderCardWithActions(t){
   if(!canManageOperations()) return workOrderCard(t);
   const index = app.tasks.indexOf(t);
-  return `${workOrderCard(t)}<div class="actions no-print"><button type="button" onclick="openWorkOrderDetail('${t.id}')">Open</button><button class="ghost" type="button" onclick="openEditModal('tasks',${index})">Edit</button><button class="ghost" type="button" onclick="deleteItem('tasks',${index})">Archive</button></div>`;
+  return `${workOrderCard(t)}<div class="actions no-print"><button type="button" onclick="openWorkOrderDetail('${t.id}')">Open</button><button class="ghost" type="button" onclick="openEditModal('tasks',${index})">Edit</button><button class="ghost" type="button" onclick="deleteItem('tasks',${index})">Move out of active work</button></div>`;
 }
 
 
@@ -59,16 +59,16 @@ function anchorMemoryForWorkOrder(task){
 
 
 async function archiveWorkOrderById(workOrderId){
-  if(!requireOperationsPermission("archive work orders")) return;
-  if(!confirm("Archive this work order? It will leave the active list but stay recoverable.")) return;
+  if(!requireOperationsPermission("move work orders out of active work")) return;
+  if(!confirm("Move this work order out of active work? It will leave the active list but stay recoverable.")) return;
   try{
     await archiveRecord("field_ops_work_orders", workOrderId);
     if(selectedWorkOrderId === workOrderId) selectedWorkOrderId = "";
     showView("workOrders", { skipHistory:true });
   }catch(err){
     console.error(err);
-    setWorkOrderDetailState(`Archive failed: ${err.message}`, "failed");
-    setStatus("Archive failed");
+    setWorkOrderDetailState(`Could not move out of active work: ${err.message}`, "failed");
+    setStatus("Move out of active work failed");
   }
 }
 
